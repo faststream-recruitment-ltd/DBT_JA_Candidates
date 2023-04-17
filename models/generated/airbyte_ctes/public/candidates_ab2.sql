@@ -1,0 +1,66 @@
+{{ config(
+    indexes = [{'columns':['_airbyte_emitted_at'],'type':'btree'}],
+    unique_key = '_airbyte_ab_id',
+    schema = "_airbyte_public",
+    tags = [ "top-level-intermediate" ]
+) }}
+-- SQL model to cast each column to its adequate SQL type converted from the JSON schema type
+-- depends_on: {{ ref('candidates_ab1') }}
+select
+    cast(lastname as {{ dbt_utils.type_string() }}) as lastname,
+    education,
+    cast({{ adapter.quote('source') }} as {{ dbt_utils.type_string() }}) as {{ adapter.quote('source') }},
+    skills,
+    cast(createdat as {{ dbt_utils.type_string() }}) as createdat,
+    recruiters,
+    otheremail,
+    cast(email as {{ dbt_utils.type_string() }}) as email,
+    cast(updatedat as {{ dbt_utils.type_string() }}) as updatedat,
+    cast(summary as {{ dbt_utils.type_string() }}) as summary,
+    cast(country as {{ dbt_utils.type_string() }}) as country,
+    cast(city as {{ dbt_utils.type_string() }}) as city,
+    cast(countrycode as {{ dbt_utils.type_string() }}) as street,
+    cast(countrycode as {{ dbt_utils.type_string() }}) as countrycode,
+    cast(postalcode as {{ dbt_utils.type_string() }}) as postalcode,
+    cast(postcode as {{ dbt_utils.type_string() }}) as postcode,
+    cast(state as {{ dbt_utils.type_string() }}) as state,
+    cast(updatedBy_firstName as {{ dbt_utils.type_string() }}) as updatedBy_firstName,
+    cast(updatedBy_lastName as {{ dbt_utils.type_string() }}) as updatedBy_lastName,
+    cast(updatedBy_UserId as {{ dbt_utils.type_string() }}) as updatedBy_UserId, 
+    cast(updatedBy_email as {{ dbt_utils.type_string() }}) as updatedBy_email, 
+    cast(twitter as {{ dbt_utils.type_string() }}) as twitter,
+    cast(linkedin as {{ dbt_utils.type_string() }}) as linkedin,
+    cast(facebook as {{ dbt_utils.type_string() }}) as facebook,
+    cast(emergencycontact as {{ dbt_utils.type_string() }}) as emergencycontact,
+    custom,
+    cast(mobile as {{ dbt_utils.type_string() }}) as mobile,
+    cast(dateofbirth as {{ dbt_utils.type_string() }}) as dateofbirth,
+    cast(employment as {{ type_json() }}) as employment,
+    cast(ideal as {{ type_json() }}) as ideal,
+    cast(history as {{ type_json() }}) as history,
+    cast(employer as {{ dbt_utils.type_string() }}) as employer,
+    cast(workType as {{ dbt_utils.type_string() }}) as workType,
+    cast(position as {{ dbt_utils.type_string() }}) as position,
+    cast(seeking as {{ dbt_utils.type_string() }}) as seeking,
+    cast(salary as {{ dbt_utils.type_string() }}) as salary,    
+    cast(firstname as {{ dbt_utils.type_string() }}) as firstname,
+    {{ cast_to_boolean('unsubscribed') }} as unsubscribed,
+    cast(phone as {{ dbt_utils.type_string() }}) as phone,
+    cast(createdby_firstName as {{ dbt_utils.type_string() }}) as createdby_firstName,
+    cast(createdby_lastName as {{ dbt_utils.type_string() }}) as createdby_lastName,
+    cast(createdby_UserId as {{ dbt_utils.type_string() }}) as createdby_UserId, 
+    cast(createdby_email as {{ dbt_utils.type_string() }}) as createdby_email,   
+    cast(salutation as {{ dbt_utils.type_string() }}) as salutation,
+    cast(candidateid as {{ dbt_utils.type_bigint() }}) as candidateid,
+    cast(emergencyphone as {{ dbt_utils.type_string() }}) as emergencyphone,
+    cast(status_name as {{ dbt_utils.type_string() }}) as status_name,     
+    cast({{ adapter.quote('statistics') }} as {{ type_json() }}) as {{ adapter.quote('statistics') }},
+    applications,
+    _airbyte_ab_id,
+    _airbyte_emitted_at,
+    {{ current_timestamp() }} as _airbyte_normalized_at
+from {{ ref('candidates_ab1') }}
+-- candidates
+where 1 = 1
+{{ incremental_clause('_airbyte_emitted_at', this) }}
+

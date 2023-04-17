@@ -1,0 +1,23 @@
+version: 2
+sources:
+- name: public
+  quoting:
+    database: true
+    schema: false
+    identifier: false
+  tables:
+  - name: _airbyte_raw_candidates
+  - name: _airbyte_raw_companies
+  - name: _airbyte_raw_contacts
+  - name: _airbyte_raw_deleted_candidates
+  - name: _airbyte_raw_deleted_companies
+  - name: _airbyte_raw_deleted_contacts
+  - name: _airbyte_raw_deleted_jobs
+  - name: _airbyte_raw_interviews
+  - name: _airbyte_raw_job_ads
+  - name: _airbyte_raw_job_boards
+  - name: _airbyte_raw_jobs
+  - name: _airbyte_raw_notes
+  - name: _airbyte_raw_placements
+  - name: _airbyte_raw_user_groups
+  - name: _airbyte_raw_users

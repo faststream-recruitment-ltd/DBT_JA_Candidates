@@ -1,0 +1,66 @@
+{{ config(
+    indexes = [{'columns':['_airbyte_emitted_at'],'type':'btree'}],
+    unique_key = '_airbyte_ab_id',
+    schema = "_airbyte_public",
+    tags = [ "top-level-intermediate" ]
+) }}
+-- SQL model to parse JSON blob stored in a single column and extract into separated field columns as described by the JSON Schema
+-- depends_on: {{ source('public', '_airbyte_raw_candidates') }}
+select
+    {{ json_extract_scalar('_airbyte_data', ['lastName'], ['lastName']) }} as lastname,
+    {{ json_extract_array('_airbyte_data', ['education'], ['education']) }} as education,
+    {{ json_extract_scalar('_airbyte_data', ['source'], ['source']) }} as {{ adapter.quote('source') }},
+    {{ json_extract_array('_airbyte_data', ['skills'], ['skills']) }} as skills,
+    {{ json_extract_scalar('_airbyte_data', ['createdAt'], ['createdAt']) }} as createdat,
+    {{ json_extract_array('_airbyte_data', ['recruiters'], ['recruiters']) }} as recruiters,
+    {{ json_extract_string_array('_airbyte_data', ['otherEmail'], ['otherEmail']) }} as otheremail,
+    {{ json_extract_scalar('_airbyte_data', ['email'], ['email']) }} as email,
+    {{ json_extract_scalar('_airbyte_data', ['updatedAt'], ['updatedAt']) }} as updatedat,
+    {{ json_extract_scalar('_airbyte_data', ['summary'], ['summary']) }} as summary,
+    {{ json_extract_scalar('_airbyte_data', ['address', 'country'], ['country']) }} as country,
+    {{ json_extract_scalar('_airbyte_data', ['address', 'city'], ['city']) }} as city,
+    {{ json_extract_scalar('_airbyte_data', ['address', 'street'], ['street']) }} as street,
+    {{ json_extract_scalar('_airbyte_data', ['address', 'countrycode'], ['countrycode']) }} as countrycode,
+    {{ json_extract_scalar('_airbyte_data', ['address', 'postalcode'], ['postalcode']) }} as postalcode,
+    {{ json_extract_scalar('_airbyte_data', ['address', 'postcode'], ['postcode']) }} as postcode,
+    {{ json_extract_scalar('_airbyte_data', ['address', 'state'], ['state']) }} as state,
+    {{ json_extract_scalar('_airbyte_data', ['updatedBy', 'firstName'], ['updatedBy_firstName']) }} as updatedBy_firstName,
+    {{ json_extract_scalar('_airbyte_data', ['updatedBy', 'lastName'], ['updatedBy_lastName']) }} as updatedBy_lastName,
+    {{ json_extract_scalar('_airbyte_data', ['updatedBy', 'userId'], ['updatedBy_UserId']) }} as updatedBy_UserId,   
+    {{ json_extract_scalar('_airbyte_data', ['updatedBy', 'email'], ['updatedBy_email']) }} as updatedBy_email,
+    {{ json_extract_scalar('_airbyte_data', ['social', 'twitter'], ['twitter']) }} as twitter,
+    {{ json_extract_scalar('_airbyte_data', ['social', 'linkedin'], ['linkedin']) }} as linkedin,
+    {{ json_extract_scalar('_airbyte_data', ['social', 'facebook'], ['facebook']) }} as facebook,
+    {{ json_extract_scalar('_airbyte_data', ['emergencyContact'], ['emergencyContact']) }} as emergencycontact,
+    {{ json_extract_array('_airbyte_data', ['custom'], ['custom']) }} as custom,
+    {{ json_extract_scalar('_airbyte_data', ['mobile'], ['mobile']) }} as mobile,
+    {{ json_extract_scalar('_airbyte_data', ['dateOfBirth'], ['dateOfBirth']) }} as dateofbirth,
+    {{ json_extract('table_alias', '_airbyte_data', ['employment'], ['employment']) }} as employment,
+    {{ json_extract('table_alias', '_airbyte_data', 'employment', 'ideal') }} as ideal,
+    {{ json_extract_array('_airbyte_data', 'employment', 'history') }} as history,
+    {{ json_extract_scalar('_airbyte_data', ['employment', 'current', 'employer'], ['employer']) }} as employer,
+    {{ json_extract_scalar('_airbyte_data', ['employment', 'current', 'workType'], ['workType']) }} as workType,
+    {{ json_extract_scalar('_airbyte_data', ['employment', 'current', 'position'], ['position']) }} as position,
+    {{ json_extract_scalar('_airbyte_data', ['employment', 'current', 'salary'], ['salary']) }} as salary,
+    {{ json_extract_scalar('_airbyte_data', ['seeking'], ['seeking']) }} as seeking,
+    {{ json_extract_scalar('_airbyte_data', ['firstName'], ['firstName']) }} as firstname,
+    {{ json_extract_scalar('_airbyte_data', ['unsubscribed'], ['unsubscribed']) }} as unsubscribed,
+    {{ json_extract_scalar('_airbyte_data', ['phone'], ['phone']) }} as phone,
+    {{ json_extract_scalar('_airbyte_data', ['createdBy', 'firstName'], ['createdBy_firstName']) }} as createdBy_firstName,
+    {{ json_extract_scalar('_airbyte_data', ['createdBy', 'lastName'], ['createdBy_lastName']) }} as createdBy_lastName,
+    {{ json_extract_scalar('_airbyte_data', ['createdBy', 'userId'], ['createdBy_UserId']) }} as createdBy_UserId,   
+    {{ json_extract_scalar('_airbyte_data', ['createdBy', 'email'], ['createdBy_email']) }} as createdBy_email,    
+    {{ json_extract_scalar('_airbyte_data', ['salutation'], ['salutation']) }} as salutation,
+    {{ json_extract_scalar('_airbyte_data', ['candidateId'], ['candidateId']) }} as candidateid,
+    {{ json_extract_scalar('_airbyte_data', ['emergencyPhone'], ['emergencyPhone']) }} as emergencyphone,
+    {{ json_extract_scalar('_airbyte_data', ['status', 'name'], ['status_name']) }} as status_name, 
+    {{ json_extract('table_alias', '_airbyte_data', ['statistics'], ['statistics']) }} as {{ adapter.quote('statistics') }},
+    {{ json_extract_array('_airbyte_data', ['applications'], ['applications']) }} as applications,
+    _airbyte_ab_id,
+    _airbyte_emitted_at,
+    {{ current_timestamp() }} as _airbyte_normalized_at
+from {{ source('public', '_airbyte_raw_candidates') }} as table_alias
+-- candidates
+where 1 = 1
+{{ incremental_clause('_airbyte_emitted_at', this) }}
+
