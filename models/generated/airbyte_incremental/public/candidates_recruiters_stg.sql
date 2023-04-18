@@ -8,16 +8,16 @@
 -- depends_on: {{ ref('candidates_custom_ab2') }}
 select
     {{ dbt_utils.surrogate_key([
-        'candidateId',
+        'candidateid',
         'updatedat',
-        adapter.quote('name'),
-        adapter.quote('type'),
-        adapter.quote('value'),
-        'fieldid',
-    ]) }} as _airbyte_custom_hashid,
+        'userid',
+        'email',
+        'firstName',
+        'lastName',
+    ]) }} as _airbyte_recruiters_hashid,
     tmp.*
-from {{ ref('candidates_custom_ab2') }} tmp
--- custom at Candidates/custom
+from {{ ref('candidates_recruiters_ab2') }} tmp
+-- custom at Candidates/recruiters
 where 1 = 1
 {{ incremental_clause('_airbyte_emitted_at', this) }}
 

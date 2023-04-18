@@ -9,7 +9,7 @@
 select
     {{ json_extract_scalar('_airbyte_data', ['updatedAt'], ['updatedAt']) }} as updatedat,
     {{ json_extract_scalar('_airbyte_data', ['candidateId'], ['candidateId']) }} as candidateid,
-    jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'recruiters'))->>'userId' as userId,
+    jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'recruiters'))->>'userId' as userid,
     jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'recruiters'))->>'email' as email,
     jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'recruiters'))->>'firstName' as firstName,
     jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'recruiters'))->>'lastName' as lastName,

@@ -9,8 +9,8 @@
 select
     cast(updatedat as {{ dbt_utils.type_string() }}) as updatedat,
     candidateid,
-    cast(userId as {{ dbt_utils.type_string() }}) as userId,
-    cast(email as {{ dbt_utils.type_string() }}) as mail,
+    cast(userid as {{ dbt_utils.type_string() }}) as userid,
+    cast(email as {{ dbt_utils.type_string() }}) as email,
     cast(firstName as {{ dbt_utils.type_string() }}) as firstName,
     cast(lastName as {{ dbt_utils.type_string() }}) as lastName,
     _airbyte_ab_id,

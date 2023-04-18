@@ -7,7 +7,7 @@
                     set final_table_relation = adapter.get_relation(
                             database=this.database,
                             schema=this.schema,
-                            identifier='candidates'
+                            identifier='candidates_recruiters'
                         )
                     %}
                     {#
@@ -33,12 +33,12 @@
                         from (
                                 select distinct _airbyte_unique_key as unique_key
                                 from {{ this }}
-                                where 1=1 {{ incremental_clause('_airbyte_normalized_at', adapter.quote(this.schema) + '.' + adapter.quote('candidates')) }}
+                                where 1=1 {{ incremental_clause('_airbyte_normalized_at', adapter.quote(this.schema) + '.' + adapter.quote('candidates_recruiters')) }}
                             ) recent_records
                             left join (
                                 select _airbyte_unique_key as unique_key, count(_airbyte_unique_key) as active_count
                                 from {{ this }}
-                                where _airbyte_active_row = 1 {{ incremental_clause('_airbyte_normalized_at', adapter.quote(this.schema) + '.' + adapter.quote('candidates')) }}
+                                where _airbyte_active_row = 1 {{ incremental_clause('_airbyte_normalized_at', adapter.quote(this.schema) + '.' + adapter.quote('candidates_recruiters')) }}
                                 group by _airbyte_unique_key
                             ) active_counts
                             on recent_records.unique_key = active_counts.unique_key
@@ -48,18 +48,18 @@
                     -- We have to have a non-empty query, so just do a noop delete
                     delete from {{ this }} where 1=0
                     {% endif %}
-                    ","delete from public.candidates_stg where _airbyte_emitted_at != (select max(_airbyte_emitted_at) from public.candidates_stg)"],
+                    ","delete from public.candidates_recruiters_stg where _airbyte_emitted_at != (select max(_airbyte_emitted_at) from public.candidates_recruiters_stg)"],
     tags = [ "top-level" ]
 ) }}
--- depends_on: ref('candidates_stg')
+-- depends_on: ref('candidates_recruiters_stg')
 with
 {% if is_incremental() %}
 new_data as (
     -- retrieve incremental "new" data
     select
         *
-    from {{ ref('candidates_stg')  }}
-    -- candidates from {{ source('public', '_airbyte_raw_candidates') }}
+    from {{ ref('candidates_recruiters_stg')  }}
+    -- candidates_recruiters from {{ source('public', '_airbyte_raw_candidates') }}
     where 1 = 1
     {{ incremental_clause('_airbyte_emitted_at', this) }}
 ),
@@ -68,6 +68,7 @@ new_data_ids as (
     select distinct
         {{ dbt_utils.surrogate_key([
             'candidateid',
+            'userid',
         ]) }} as _airbyte_unique_key
     from new_data
 ),
@@ -78,7 +79,7 @@ empty_new_data as (
 previous_active_scd_data as (
     -- retrieve "incomplete old" data that needs to be updated with an end date because of new changes
     select
-        {{ star_intersect(ref('candidates_stg'), this, from_alias='inc_data', intersect_alias='this_data') }}
+        {{ star_intersect(ref('candidates_recruiters_stg'), this, from_alias='inc_data', intersect_alias='this_data') }}
     from {{ this }} as this_data
     -- make a join with new_data using primary key to filter active data that need to be updated only
     join new_data_ids on this_data._airbyte_unique_key = new_data_ids._airbyte_unique_key
@@ -87,82 +88,40 @@ previous_active_scd_data as (
     where _airbyte_active_row = 1
 ),
 input_data as (
-    select {{ dbt_utils.star(ref('candidates_stg')) }} from new_data
+    select {{ dbt_utils.star(ref('candidates_recruiters_stg')) }} from new_data
     union all
-    select {{ dbt_utils.star(ref('candidates_stg')) }} from previous_active_scd_data
+    select {{ dbt_utils.star(ref('candidates_recruiters_stg')) }} from previous_active_scd_data
 ),
 {% else %}
 input_data as (
     select *
-    from {{ ref('candidates_stg')  }}
-    -- candidates from {{ source('public', '_airbyte_raw_candidates') }}
+    from {{ ref('candidates_recruiters_stg')  }}
+    -- candidates_recruiters from {{ source('public', '_airbyte_raw_candidates') }}
 ),
 {% endif %}
 scd_data as (
     -- SQL model to build a Type 2 Slowly Changing Dimension (SCD) table for each record identified by their primary key
     select
       {{ dbt_utils.surrogate_key([
-      'candidateid',
+      'candidateid',  
+      'userid',
       ]) }} as _airbyte_unique_key,
-      lastname,
-      education,
-      {{ adapter.quote('source') }},
-      skills,
-      createdat,
-      recruiters,
-      otheremail,
-      email,
-      updatedat,
-      summary,
-      country,
-      city,
-      street,
-      countrycode,
-      postalcode,
-      postcode,
-      state,  
-      updatedBy_firstName,
-      updatedBy_lastName,
-      updatedBy_UserId,
-      updatedBy_email, 
-      twitter,
-      linkedin,
-      facebook,
-      emergencycontact,
-      custom,
-      mobile,
-      dateofbirth,
-      employment,
-      ideal,
-      history,
-      employer,
-      workType,
-      position,
-      salary,      
-      seeking,
-      firstname,
-      unsubscribed,
-      phone,
-      createdby_firstName,
-      createdby_lastName,
-      createdby_UserId, 
-      createdby_email,
-      salutation,
       candidateid,
-      emergencyphone,
-      status_name,
-      {{ adapter.quote('statistics') }},
-      applications,
-      updatedat as _airbyte_start_at,
-      lag(updatedat) over (
-        partition by candidateid
+      updatedat,
+      firstName,
+      lastName,
+      email,
+      userid,
+      _airbyte_emitted_at as _airbyte_start_at,
+      lag(_airbyte_emitted_at) over (
+        partition by userid, candidateid
         order by
             updatedat is null asc,
             updatedat desc,
             _airbyte_emitted_at desc
       ) as _airbyte_end_at,
       case when row_number() over (
-        partition by candidateid
+        partition by userid, candidateid
         order by
             updatedat is null asc,
             updatedat desc,
@@ -170,7 +129,7 @@ scd_data as (
       ) = 1 then 1 else 0 end as _airbyte_active_row,
       _airbyte_ab_id,
       _airbyte_emitted_at,
-      _airbyte_candidates_hashid
+      _airbyte_recruiters_hashid
     from input_data
 ),
 dedup_data as (
@@ -195,61 +154,18 @@ dedup_data as (
 select
     _airbyte_unique_key,
     _airbyte_unique_key_scd,
-    lastname,
-    education,
-    {{ adapter.quote('source') }},
-    skills,
-    createdat,
-    recruiters,
-    otheremail,
-    email,
-    updatedat,
-    summary,
-    country,
-    city,
-    street,
-    countrycode,
-    postalcode,
-    postcode,
-    state,      
-    updatedBy_firstName,
-    updatedBy_lastName,
-    updatedBy_UserId,
-    updatedBy_email, 
-    twitter,
-    linkedin,
-    facebook,
-    emergencycontact,
-    custom,
-    mobile,
-    dateofbirth,
-    employment,
-    ideal,
-    history,
-    employer,
-    workType,
-    position,      
-    seeking,
-    salary,
-    firstname,
-    unsubscribed,
-    phone,
-    createdby_firstName,
-    createdby_lastName,
-    createdby_UserId, 
-    createdby_email,       
-    salutation,
     candidateid,
-    emergencyphone,
-    status_name,
-    {{ adapter.quote('statistics') }},
-    applications,
+    updatedat,
+    firstName,
+    lastName,
+    email,
+    userid,
     _airbyte_start_at,
     _airbyte_end_at,
     _airbyte_active_row,
     _airbyte_ab_id,
     _airbyte_emitted_at,
     {{ current_timestamp() }} as _airbyte_normalized_at,
-    _airbyte_candidates_hashid
+    _airbyte_recruiters_hashid
 from dedup_data where _airbyte_row_num = 1
 
