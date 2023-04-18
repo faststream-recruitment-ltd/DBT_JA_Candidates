@@ -1,13 +1,15 @@
 {{ config(
-    indexes = [{'columns':['_airbyte_emitted_at'],'type':'btree'}],
+    indexes = [{'columns':['_airbyte_unique_key'],'unique':True}],
+    unique_key = "_airbyte_unique_key",
     schema = "public",
-    tags = [ "nested" ]
+    tags = [ "top-level" ]
 ) }}
 -- Final base SQL model
--- depends_on: {{ ref('candidates_custom_ab3') }}
-select distinct on (candidateId, fieldid)
-    _airbyte_candidates_hashid,
-    candidateId,
+-- depends_on: {{ ref('candidates_custom_scd') }}
+select
+    _airbyte_unique_key,
+    candidateid,
+    updatedat,
     {{ adapter.quote('name') }},
     {{ adapter.quote('type') }},
     {{ adapter.quote('value') }},
@@ -16,8 +18,8 @@ select distinct on (candidateId, fieldid)
     _airbyte_emitted_at,
     {{ current_timestamp() }} as _airbyte_normalized_at,
     _airbyte_custom_hashid
-from {{ ref('candidates_custom_ab3') }}
--- custom at Candidates/custom from {{ ref('candidates_scd') }}
+from {{ ref('candidates_custom_scd') }}
+-- custom from {{ source('public', '_airbyte_raw_candidates') }}
 where 1 = 1
+and _airbyte_active_row = 1
 {{ incremental_clause('_airbyte_emitted_at', this) }}
-order by candidateId, fieldid, _airbyte_emitted_at desc

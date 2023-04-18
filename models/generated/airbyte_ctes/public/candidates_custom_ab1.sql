@@ -1,25 +1,25 @@
 {{ config(
     indexes = [{'columns':['_airbyte_emitted_at'],'type':'btree'}],
+    unique_key = '_airbyte_ab_id',
     schema = "_airbyte_public",
-    tags = [ "nested-intermediate" ]
+    tags = [ "top-level-intermediate" ]
 ) }}
 -- SQL model to parse JSON blob stored in a single column and extract into separated field columns as described by the JSON Schema
--- depends_on: {{ ref('candidates_scd') }}
-{{ unnest_cte(ref('candidates_scd'), 'candidates', 'custom') }}
+-- depends_on: {{ source('public', '_airbyte_raw_candidates') }}
 select
-    _airbyte_candidates_hashid,
-    candidateid,
-    {{ json_extract_scalar(unnested_column_value('custom'), ['name'], ['name']) }} as {{ adapter.quote('name') }},
-    {{ json_extract_scalar(unnested_column_value('custom'), ['type'], ['type']) }} as {{ adapter.quote('type') }},
-    {{ json_extract('', unnested_column_value('custom'), ['value']) }} as {{ adapter.quote('value') }},
-    {{ json_extract_scalar(unnested_column_value('custom'), ['fieldId'], ['fieldId']) }} as fieldid,
+    {{ json_extract_scalar('_airbyte_data', ['candidateId'], ['candidateId']) }} as candidateid,
+    {{ json_extract_scalar('_airbyte_data', ['updatedAt'], ['updatedAt']) }} as updatedat,
+    jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'custom'))->>'name' as name,
+    jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'custom'))->>'type' as type,
+    jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'custom'))->>'value' as value,
+    jsonb_array_elements(jsonb_extract_path(_airbyte_data, 'custom'))->>'fieldId' as fieldId,    
     _airbyte_ab_id,
     _airbyte_emitted_at,
     {{ current_timestamp() }} as _airbyte_normalized_at
-from {{ ref('candidates_scd') }} as table_alias
--- custom at Candidates/custom
-{{ cross_join_unnest('candidates', 'custom') }}
+from {{ source('public', '_airbyte_raw_candidates') }} as table_alias
+-- candidate_test
 where 1 = 1
-and custom is not null
 {{ incremental_clause('_airbyte_emitted_at', this) }}
+
+
 

@@ -1,7 +1,7 @@
 {{ config(
     indexes = [{'columns':['_airbyte_emitted_at'],'type':'btree'}],
     unique_key = '_airbyte_ab_id',
-    schema = "_airbyte_public",
+    schema = "public",
     tags = [ "top-level-intermediate" ]
 ) }}
 -- SQL model to build a hash column based on the values of this record
