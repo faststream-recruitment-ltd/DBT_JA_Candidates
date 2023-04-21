@@ -7,3 +7,4 @@ sources:
     identifier: false
   tables:
   - name: _airbyte_raw_candidates
+  - name: _airbyte_raw_companies
