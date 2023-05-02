@@ -1,7 +1,7 @@
 {{ config(
     indexes = [{'columns':['_airbyte_active_row','_airbyte_unique_key_scd','_airbyte_emitted_at'],'type': 'btree'}],
     unique_key = "_airbyte_unique_key_scd",
-    schema = "public",
+    schema = "SCD",
     post_hook = ["
                     {%
                     set final_table_relation = adapter.get_relation(
@@ -48,7 +48,7 @@
                     -- We have to have a non-empty query, so just do a noop delete
                     delete from {{ this }} where 1=0
                     {% endif %}
-                    ","delete from public.candidates_recruiters_stg where _airbyte_emitted_at != (select max(_airbyte_emitted_at) from public.candidates_recruiters_stg)"],
+                    ","delete from Staging.candidates_recruiters_stg where _airbyte_emitted_at != (select max(_airbyte_emitted_at) from Staging.candidates_recruiters_stg)"],
     tags = [ "top-level" ]
 ) }}
 -- depends_on: ref('candidates_recruiters_stg')
